@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc src/index.ts --outDir \"dist\" --declaration true"
+    "build": "tsc"
   },
   "keywords": [
     "event",
@@ -24,5 +24,8 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/whiteand/ab-event-emitter.git"
+  },
+  "devDependencies": {
+    "typescript": "^4.0.3"
   }
 }

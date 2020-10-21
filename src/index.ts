@@ -75,8 +75,11 @@ export class EventEmitter<
     listener: EventListener<EventConfig, E>
   ): () => void {
     if (this.listenersDict[event]) {
-      this.listenersDict[event].prepend(listener);
-      if (this.listenersDict[event].length() === 1) {
+      const listeners = this.listenersDict[event] as MutableList<
+        EventListener<EventConfig, E>
+      >;
+      listeners.prepend(listener);
+      if (listeners.length() === 1) {
         this.listenedEvents.prepend(event);
       }
       return () => {
@@ -106,6 +109,7 @@ export class EventEmitter<
       }
       return this;
     }
+    return this;
   }
 
   public emit<E extends keyof EventConfig>(
