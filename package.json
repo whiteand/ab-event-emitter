@@ -12,10 +12,6 @@
     "event",
     "emitted"
   ],
-  "files": [
-    "./dist/**/*.ts",
-    "./dist/**/*.d.ts"
-  ],
   "author": "AndrewBeletskiy <AndrewBeletskiy@gmail.com>",
   "license": "ISC",
   "bugs": {
