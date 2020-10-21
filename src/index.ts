@@ -59,24 +59,38 @@ type ListenersDict<EventConfig> = {
   [event in keyof EventConfig]: MutableList<EventListener<EventConfig, event>>;
 };
 
+const EVENT_EXCLUDED = "ee-event-excluded";
+const EVENT_INCLUDED = "ee-event-included";
+
+type TDefaultEvent = typeof EVENT_EXCLUDED | typeof EVENT_INCLUDED;
+
+type DefaultEvents<AdditionalEvents> = {
+  [defaultEvent in TDefaultEvent]: keyof AdditionalEvents | TDefaultEvent;
+};
+
+export type EventConfig<AdditionalEvents> = AdditionalEvents &
+  DefaultEvents<AdditionalEvents>;
+
 export class EventEmitter<
-  EventConfig extends Record<string, any> = Record<string, any>
+  AdditionalEvents extends Record<string, any> = Record<string, any>
 > {
-  private listenersDict: Partial<ListenersDict<EventConfig>>;
-  private listenedEvents: MutableList<keyof EventConfig>;
+  static EventExcluded: typeof EVENT_EXCLUDED = EVENT_EXCLUDED;
+  static EventIncluded: typeof EVENT_INCLUDED = EVENT_INCLUDED;
+  private listenersDict: Partial<ListenersDict<EventConfig<AdditionalEvents>>>;
+  private listenedEvents: MutableList<keyof EventConfig<AdditionalEvents>>;
 
   constructor() {
     this.listenersDict = {};
     this.listenedEvents = new MutableList();
   }
 
-  public on<E extends keyof EventConfig>(
+  public on<E extends keyof EventConfig<AdditionalEvents>>(
     event: E,
-    listener: EventListener<EventConfig, E>
+    listener: EventListener<EventConfig<AdditionalEvents>, E>
   ): () => void {
     if (this.listenersDict[event]) {
       const listeners = this.listenersDict[event] as MutableList<
-        EventListener<EventConfig, E>
+        EventListener<EventConfig<AdditionalEvents>, E>
       >;
       listeners.prepend(listener);
       if (listeners.length() === 1) {
@@ -87,18 +101,21 @@ export class EventEmitter<
       };
     }
 
-    const listenersList = new MutableList<EventListener<EventConfig, E>>();
+    const listenersList = new MutableList<
+      EventListener<EventConfig<AdditionalEvents>, E>
+    >();
     listenersList.prepend(listener);
     this.listenersDict[event] = listenersList;
     this.listenedEvents.prepend(event);
+    this.emit(EventEmitter.EventIncluded, event as any);
     return () => {
       this.off(event, listener);
     };
   }
-  public off<E extends keyof EventConfig>(
+  public off<E extends keyof EventConfig<AdditionalEvents>>(
     event: E,
-    listener?: EventListener<EventConfig, E>
-  ): EventEmitter<EventConfig> {
+    listener?: EventListener<EventConfig<AdditionalEvents>, E>
+  ): EventEmitter<EventConfig<AdditionalEvents>> {
     if (!listener) {
       return this.offEvent(event);
     }
@@ -109,16 +126,17 @@ export class EventEmitter<
       if (listeners.length() === 0) {
         this.listenedEvents.remove(event);
         delete this.listenersDict[event];
+        this.emit(EventEmitter.EventExcluded, event as any);
       }
       return this;
     }
     return this;
   }
 
-  public emit<E extends keyof EventConfig>(
+  public emit<E extends keyof EventConfig<AdditionalEvents>>(
     event: E,
-    data: EventConfig[E]
-  ): EventEmitter<EventConfig> {
+    data: EventConfig<AdditionalEvents>[E]
+  ): EventEmitter<EventConfig<AdditionalEvents>> {
     const listeners = this.listenersDict[event];
     if (listeners) {
       listeners.iterate((callback) => callback(data));
@@ -126,30 +144,40 @@ export class EventEmitter<
     return this;
   }
 
-  public offAll(): EventEmitter<EventConfig> {
+  public offAll(): EventEmitter<EventConfig<AdditionalEvents>> {
     this.listenersDict = {};
+    this.listenedEvents.iterate((event) => {
+      this.emit(EventEmitter.EventExcluded, event as any);
+    });
     this.listenedEvents = new MutableList();
+
     return this;
   }
 
-  private offEvent<E extends keyof EventConfig>(event: E) {
+  private offEvent<E extends keyof EventConfig<AdditionalEvents>>(event: E) {
+    if (!this.listenersDict[event]) return this;
+
     this.listenedEvents.remove(event);
     delete this.listenersDict[event];
+    this.emit(EventEmitter.EventExcluded, event as any);
+
     return this;
   }
 
-  public listenersNumber<E extends keyof EventConfig>(event: E): number {
+  public listenersNumber<E extends keyof EventConfig<AdditionalEvents>>(
+    event: E
+  ): number {
     const listenersList = this.listenersDict[event];
     return listenersList ? listenersList.length() : 0;
   }
 
-  public getListenedEvents(): (keyof EventConfig)[] {
+  public getListenedEvents(): (keyof EventConfig<AdditionalEvents>)[] {
     return this.listenedEvents.toArray();
   }
 
-  public getListeners<E extends keyof EventConfig>(
+  public getListeners<E extends keyof EventConfig<AdditionalEvents>>(
     event: E
-  ): EventListener<EventConfig, E>[] {
+  ): EventListener<EventConfig<AdditionalEvents>, E>[] {
     const listeners = this.listenersDict[event];
     return listeners ? listeners.toArray() : [];
   }
