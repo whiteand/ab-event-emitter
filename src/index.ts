@@ -97,8 +97,11 @@ export class EventEmitter<
   }
   public off<E extends keyof EventConfig>(
     event: E,
-    listener: EventListener<EventConfig, E>
+    listener?: EventListener<EventConfig, E>
   ): EventEmitter<EventConfig> {
+    if (!listener) {
+      return this.offEvent(event);
+    }
     const listeners = this.listenersDict[event];
     if (listeners) {
       listeners.remove(listener);
@@ -126,6 +129,12 @@ export class EventEmitter<
   public offAll(): EventEmitter<EventConfig> {
     this.listenersDict = {};
     this.listenedEvents = new MutableList();
+    return this;
+  }
+
+  private offEvent<E extends keyof EventConfig>(event: E) {
+    this.listenedEvents.remove(event);
+    delete this.listenersDict[event];
     return this;
   }
 
