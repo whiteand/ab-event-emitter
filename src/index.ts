@@ -71,7 +71,7 @@ type DefaultEvents<AdditionalEvents> = {
 export type EventConfig<AdditionalEvents> = AdditionalEvents &
   DefaultEvents<AdditionalEvents>;
 
-export class EventEmitter<
+export class ABEventEmitter<
   AdditionalEvents extends Record<string, any> = Record<string, any>
 > {
   static EventExcluded: typeof EVENT_EXCLUDED = EVENT_EXCLUDED;
@@ -107,7 +107,7 @@ export class EventEmitter<
     listenersList.prepend(listener);
     this.listenersDict[event] = listenersList;
     this.listenedEvents.prepend(event);
-    this.emit(EventEmitter.EventIncluded, event as any);
+    this.emit(ABEventEmitter.EventIncluded, event as any);
     return () => {
       this.off(event, listener);
     };
@@ -115,7 +115,7 @@ export class EventEmitter<
   public off<E extends keyof EventConfig<AdditionalEvents>>(
     event: E,
     listener?: EventListener<EventConfig<AdditionalEvents>, E>
-  ): EventEmitter<EventConfig<AdditionalEvents>> {
+  ): ABEventEmitter<EventConfig<AdditionalEvents>> {
     if (!listener) {
       return this.offEvent(event);
     }
@@ -126,7 +126,7 @@ export class EventEmitter<
       if (listeners.length() === 0) {
         this.listenedEvents.remove(event);
         delete this.listenersDict[event];
-        this.emit(EventEmitter.EventExcluded, event as any);
+        this.emit(ABEventEmitter.EventExcluded, event as any);
       }
       return this;
     }
@@ -136,7 +136,7 @@ export class EventEmitter<
   public emit<E extends keyof EventConfig<AdditionalEvents>>(
     event: E,
     data: EventConfig<AdditionalEvents>[E]
-  ): EventEmitter<EventConfig<AdditionalEvents>> {
+  ): ABEventEmitter<EventConfig<AdditionalEvents>> {
     const listeners = this.listenersDict[event];
     if (listeners) {
       listeners.iterate((callback) => callback(data));
@@ -144,10 +144,10 @@ export class EventEmitter<
     return this;
   }
 
-  public offAll(): EventEmitter<EventConfig<AdditionalEvents>> {
+  public offAll(): ABEventEmitter<EventConfig<AdditionalEvents>> {
     this.listenersDict = {};
     this.listenedEvents.iterate((event) => {
-      this.emit(EventEmitter.EventExcluded, event as any);
+      this.emit(ABEventEmitter.EventExcluded, event as any);
     });
     this.listenedEvents = new MutableList();
 
@@ -159,7 +159,7 @@ export class EventEmitter<
 
     this.listenedEvents.remove(event);
     delete this.listenersDict[event];
-    this.emit(EventEmitter.EventExcluded, event as any);
+    this.emit(ABEventEmitter.EventExcluded, event as any);
 
     return this;
   }
