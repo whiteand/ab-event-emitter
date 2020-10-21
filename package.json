@@ -12,7 +12,8 @@
     "emitted"
   ],
   "files": [
-    "./dist/**/*"
+    "./dist/**/*.ts",
+    "./dist/**/*.d.ts"
   ],
   "types": "./dist/index.d.ts",
   "author": "AndrewBeletskiy <AndrewBeletskiy@gmail.com>",
